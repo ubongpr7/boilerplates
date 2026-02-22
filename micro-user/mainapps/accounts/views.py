@@ -24,7 +24,6 @@ from django.conf import settings
 from .serializers import (
     MyUserSerializer as UserSerializer,
      UserUpdateSerializer, 
-     UserQuotaMetadataSerializer,
      TokenRefreshSerializer,
 )
 from rest_framework_simplejwt.views import (
@@ -53,9 +52,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update', ]:
             return UserUpdateSerializer
-        if self.action == 'quota_meta_data':
-            return UserQuotaMetadataSerializer
-        return super().get_serializer_class()    
+        # if self.action == 'quota_meta_data':
+        #     return UserQuotaMetadataSerializer
+        # return super().get_serializer_class()    
     
     @action(detail=False, methods=['get'], url_path='quota-meta-data')
     def quota_meta_data(self, request):
