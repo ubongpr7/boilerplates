@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${FIRST_SUPERUSER}
+      - PGADMIN_DEFAULT_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: '${DOCKER_IMAGE_BACKEND}'
+    volumes:
+      - ./app:/app/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - FIRST_SUPERUSER_FIRST_NAME=${FIRST_SUPERUSER_FIRST_NAME?Variable not set}
+      - FIRST_SUPERUSER_LAST_NAME=${FIRST_SUPERUSER_LAST_NAME?Variable not set}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL?Variable not set}
+      - SMTP_TLS=${SMTP_TLS?Variable not set}
+      - SMTP_SSL=${SMTP_SSL?Variable not set}
+      - SMTP_PORT=${SMTP_PORT?Variable not set}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS?Variable not set}
+      - PROJECT_NAME=${PROJECT_NAME?Variable not set}
+      - STACK_NAME=${STACK_NAME?Variable not set}
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_PORT=${POSTGRES_PORT?Variable not set}
+      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - DOMAIN=${DOMAIN?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT?Variable not set}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET}
+      - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
+      - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
+    command: /bin/bash -c "alembic upgrade head && fastapi run --reload --host 0.0.0.0 --port 8000 app/core/asgi.py"
+
+volumes:
+  app-db-data:
