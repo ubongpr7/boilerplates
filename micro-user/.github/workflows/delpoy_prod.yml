@@ -1,0 +1,84 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  EC2_HOST: ${{ secrets.PROD_EC2_HOST }}
+  EC2_USER: ${{ secrets.EC2_USER }}
+  DEPLOY_PATH: ~/user-service
+
+jobs:     
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 400 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to EC2
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.venv' \
+            ./ ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:${{ env.DEPLOY_PATH }}/
+          rm -rf ${{ env.DEPLOY_PATH }}/.venv
+          
+      
+      - name: Update environment configuration
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ env.EC2_USER }}@${{ env.EC2_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Create/update .env file
+            cat > .env << 'ENVFILE'
+            SECRET_KEY=${{ secrets.PROD_SECRET_KEY }}
+            DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}
+            LOCAL_SERVER=${{ secrets.PROD_LOCAL_SERVER }}
+            EMAIL_HOST_USER=${{ secrets.PROD_EMAIL_HOST_USER }}
+            EMAIL_HOST_PASSWORD=${{ secrets.PROD_EMAIL_HOST_PASSWORD }}
+            EMAIL_BACKEND=${{ secrets.PROD_EMAIL_BACKEND }}
+            SITE_URL=${{ secrets.PROD_SITE_URL }}
+            REDIRECT_URIS=${{ secrets.PROD_REDIRECT_URIS }}
+            GOOGLE_AUTH_KEY=${{ secrets.PROD_GOOGLE_AUTH_KEY }}
+            GOOGLE_AUTH_SECRET_KEY=${{ secrets.PROD_GOOGLE_AUTH_SECRET_KEY }}
+            FACEBOOK_AUTH_KEY=${{ secrets.PROD_FACEBOOK_AUTH_KEY }}
+            FACEBOOK_AUTH_SECRET_KEY=${{ secrets.PROD_FACEBOOK_AUTH_SECRET_KEY }}
+            MICROSOFT_AUTH_KEY=${{ secrets.PROD_MICROSOFT_AUTH_KEY }}
+            MICROSOFT_AUTH_SECRET_KEY=${{ secrets.PROD_MICROSOFT_AUTH_SECRET_KEY }}
+            FRONTEND_DOMAIN=${{ secrets.PROD_FRONTEND_DOMAIN }}
+            AWS_ACCESS_KEY_ID=${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+            AWS_STORAGE_BUCKET_NAME=${{ secrets.PROD_AWS_STORAGE_BUCKET_NAME }}
+            AWS_S3_REGION_NAME=${{ secrets.PROD_AWS_S3_REGION_NAME }}
+            KAFKA_BOOTSTRAP_SERVERS=${{ secrets.PROD_KAFKA_BOOTSTRAP_SERVERS }}
+            ALLOWED_HOSTS=${{ secrets.PROD_ALLOWED_HOSTS }}
+          EOF
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ env.EC2_USER }}@${{ env.EC2_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            docker compose up -d --build --remove-orphans
+            docker image prune -f
+          EOF
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ env.EC2_USER }}@${{ env.EC2_HOST }} \
+            "docker compose -f ${{ env.DEPLOY_PATH }}/docker-compose.yml ps"

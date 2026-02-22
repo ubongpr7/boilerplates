@@ -1,0 +1,92 @@
+_format_version: "3.0"
+
+services:
+  - name: users
+    url: https://users.rioeigen.com
+    routes:
+      - name: users
+        paths:
+          - /users
+        strip_path: true
+
+
+  - name: assessment
+    url: https://assessment.rioeigen.com
+    routes:
+      - name: assessment
+        paths:
+          - /assessment  
+        strip_path: true
+  
+  - name: analytics
+    url: https://analytics.rioeigen.com
+    routes:
+      - name: analytics
+        paths:
+          - /analytics  
+        strip_path: true
+  
+  - name: notification
+    url: https://notification.rioeigen.com
+    routes:
+      - name: notification
+        paths:
+          - /notification  
+        strip_path: true
+  
+  - name: marketplace
+    url: https://marketplace.rioeigen.com
+    routes:
+      - name: marketplace
+        paths:
+          - /marketplace  
+        strip_path: true
+  
+  - name: scheduler
+    url: https://scheduler.rioeigen.com
+    routes:
+      - name: scheduler
+        paths:
+          - /scheduler  
+        strip_path: true
+  
+  - name: ai
+    url: https://ai.rioeigen.com
+    routes:
+      - name: ai
+        paths:
+          - /ai  
+        strip_path: true
+  - name: media
+    url: https://media.rioeigen.com
+    routes:
+      - name: media
+        paths:
+          - /media  
+        strip_path: true
+  - name: turn
+    url: https://turn.rioeigen.com
+    routes:
+      - name: turn
+        paths:
+          - /turn  
+        strip_path: true
+  - name: kafkaconnector
+    url: https://kafka.rioeigen.com
+    routes:
+      - name: kafkaconnector
+        paths:
+          - /kafka
+  
+        strip_path: true
+
+consumers:
+  - username: user
+
+basicauth_credentials:
+  - consumer: user
+    username: Aladdin
+    password: OpenSesame
+
+keyauth_credentials:
+  - consumer: user

@@ -1,0 +1,83 @@
+{% load i18n %}
+{% load static %}
+
+{# 1. EMAIL SUBJECT #}
+{% block subject %}
+{% blocktrans %}Verify your {{ site_name }} account{% endblocktrans %}
+{% endblock subject %}
+
+
+{# 2. PLAIN TEXT VERSION #}
+{# This is for email clients that do not render HTML. #}
+{% block text_body %}
+{% blocktrans %}Hi,{% endblocktrans %}
+
+{% blocktrans with platform=platform_name|default:site_name %}Welcome to {{ platform }}, your AI-powered board prep companion.{% endblocktrans %}
+
+{% if user.role == "candidate" %}
+{% trans "Please verify your email to activate your account and start your personalized learning journey." %}
+{% elif user.role == "examiner" %}
+{% trans "Please verify your email to activate your examiner account and start reviewing candidates." %}
+{% elif user.role == "institution_admin" %}
+{% trans "Your institution has been registered and activation is under review." %}
+{% trans "Reviews are typically completed within 1–2 business days." %}
+{% else %}
+{% trans "Please verify your email to activate your account." %}
+{% endif %}
+
+{% trans "Verify My Email:" %} {{ protocol }}://{{ domain }}/{{ url|safe }}
+
+{% blocktrans with platform=platform_name|default:site_name %}
+If you did not sign up for {{ platform }}, you can safely ignore this email.
+
+The {{ site_name }} Team
+{% endblocktrans %}
+{% endblock text_body %}
+
+
+{# 3. HTML VERSION #}
+{# This is the fully styled version for modern email clients. #}
+{% block html_body %}
+<div style="font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 16px; line-height: 1.6; color: #333; max-width: 600px; margin: 20px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="{% static 'images/logo/logo-blue.png' %}" alt="{{ site_name }} Logo" style="max-width: 150px; height: auto;">
+    </div>
+
+    <p style="margin-bottom: 20px;">
+        {% blocktrans %}Hi {% endblocktrans %}
+    </p>
+
+    <p style="margin-bottom: 20px;">
+        {% blocktrans with platform=platform_name|default:site_name %}Welcome to {{ platform }}, your AI-powered board prep companion.{% endblocktrans %}
+    </p>
+
+    <p style="margin-bottom: 30px;">
+        {% if user.role == "candidate" %}
+        {% trans "Please verify your email to activate your account and start your personalized learning journey." %}
+        {% elif user.role == "examiner" %}
+        {% trans "Please verify your email to activate your examiner account and start reviewing candidates." %}
+        {% elif user.role == "institution_admin" %}
+        {% trans "Your institution has been registered and activation is under review." %}
+        <br>
+        {% trans "Reviews are typically completed within 1–2 business days." %}
+        {% else %}
+        {% trans "Please verify your email to activate your account." %}
+        {% endif %}
+    </p>
+
+    <div style="text-align: center; margin-bottom: 30px;">
+        <a href="{{ protocol }}://{{ domain }}/{{ url|safe }}" style="background-color: #007bff; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; font-size: 16px;">
+            {% trans "Verify My Email" %}
+        </a>
+    </div>
+
+    <p style="font-size: 14px; color: #777; margin-bottom: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+        {% blocktrans with platform=platform_name|default:site_name %}If you did not sign up for {{ platform }}, you can safely ignore this email.{% endblocktrans %}
+    </p>
+
+    <p style="font-size: 14px; color: #555;">
+        {% blocktrans %}The {{ site_name }} Team{% endblocktrans %}
+    </p>
+</div>
+{% endblock html_body %}
